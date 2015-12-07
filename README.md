@@ -13,6 +13,8 @@ Let users combine selected objects, assign a skin cluster and adjust the weights
 Using:
 
 Unzip the project to your Maya Python path folder
+
+Select some objects composed of several shells
  
 import combineSeparate.main as cmbSep
 
