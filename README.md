@@ -16,8 +16,6 @@ import combineSeparate.combineSeparate as cmbSep
 
 instance = cmbSep()
  
-#select some objects
- 
 instance.doCombine() #to combine objects
 
 instance.doSeparate() #to separate back to original objects
