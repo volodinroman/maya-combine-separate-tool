@@ -14,9 +14,9 @@ Using:
 
 Unzip the project to your Maya Python path folder
  
-import combineSeparate.combineSeparate as cmbSep
+import combineSeparate.main as cmbSep
 
-instance = cmbSep()
+instance = cmbSep.objectCombine()
  
 instance.doCombine() #to combine objects
 
