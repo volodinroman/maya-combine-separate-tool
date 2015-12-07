@@ -1,0 +1,127 @@
+// flattenCombineDontMerge.mel
+//	by Naughty - Feb 2003 (naughty_genepool@hotmail.com)
+//
+// This script is a Super-Combine function. It combines all selected polygon
+// geometry into a single object. It performs the same function as the regular Maya
+// "combine" command but it preserves the Name, Pivot Position and Heirarchy (DAG)
+// Position of the original, initially selected object (which can even be a nul
+// transform (empty group). It also removes all that awful Transform History on 
+// combined objects resulting in less post-cleaning up and much tidier scenes.
+//
+// Select the object who's properties you want to preserve FIRST. Then select
+// anything else you want to combine to it. Anthing selected by parental/child
+// inheritance will be combined by default and doesn't have to be explicitly
+// selected. The initial selection can be a nul transform (an empty group) or 
+// simply the polygon object you want to combine everything else onto. 
+//
+// Latest update: script *tries* to preserve transform position but sometimes gives
+// screwy results. it will still LOOK right, you'll just have to freeze it when done.
+//
+// Usage:
+//
+//	flattenCombineDontMerge;	// mashes everything selected into a single object
+//
+//
+// goto:
+//	http://www.naughtynathan.supanet.com/mel.htm
+// for more detailed explanations, pictures and even more MEL scripts...
+
+global proc string flattenCombineDontMerge()
+{
+	string $selected[], $stupidArrays[], $DAGMarker[], $master ;
+
+	selectMode -object;
+
+	$selected = `ls -sl -l` ;
+	if (!size($selected)) error "Nothing Selected.";
+
+	$master = $selected[0];		// store "Master" object name
+	if (size(`ls -type shape $master`))
+	{
+		$stupidArrays = `listRelatives -p -f $selected[0]`;
+		$master = $stupidArrays[0];
+	}
+
+	// store all of "masters" initial properties:
+	string $subStrs[] ;
+	int $numberOfSubStrs = `tokenize $master "|" $subStrs` ; 
+	string $endname = $subStrs[$numberOfSubStrs-1] ;	// store it's basic name
+	
+	string $DAGPos[] = `listRelatives -p -f $master` ;	// store its position in the DAG heirarchy
+	float $position[3] = `getAttr ($master+".translate")` ;	// store it's translation
+//	float $rotation[3] = `getAttr ($master+".rotate")` ;	// store it's rotation
+//	float $scale[3] = `getAttr ($master+".scale")` ;	// store it's scale
+	float $pivpos[3] = `xform -q -ws -sp $master` ;		// store it's pivot position
+
+	// now we need to clean up the selection list to *only* include single instances of geometry transforms
+	string $selGeomShapes[] = `ls -sl -l -dag -lf -g`;	// list *any* geometry child shapes
+	select -cl;
+	for ($shape in $selGeomShapes)
+	{
+		select -add `listRelatives -p -f $shape`;
+	}
+
+	$selected = `ls -sl -l` ; // should be just geometry object transform names.
+
+	// bomb-out if less than two MESH objects are selected
+	if (size($selected) < 2) error "Not enough objects selected. You need at least TWO.";
+
+	showHidden -b ;	// script fails if any objects are hidden!
+	lockNode -l 0 ;	// unlock any Xtra locks
+
+	// Do the actual merge
+	$stupidArrays = `polyUnite` ;
+	string $combined = $stupidArrays[0] ;
+	//polyPerformAction "polyMergeVertex -d 0.001 -tx 1" f 0;
+
+	// insert Locator into the original heirarchy position to keep branch alive
+	if (size($DAGPos[0]))
+	{
+		$DAGMarker = `spaceLocator` ;
+		parent -r $DAGMarker $DAGPos[0] ;
+	}
+
+	selectMode -o; // switch back to "Object Mode"
+
+	delete -ch $combined;
+
+	for ($sel in $selected)	// delete all original named objects (if they exist they will be orphaned transforms)
+		if (`objExists $sel`)	delete $sel;
+
+	setAttr ($combined+".doubleSided") 0 ;
+	setAttr ($combined+".opposite") 0 ;
+
+	// Reverse it's channels
+	move	-a (0-$position[0]) (0-$position[1]) (0-$position[2]) $combined ;
+//	rotate	-a (0-$rotation[0]) (0-$rotation[1]) (0-$rotation[2]) $combined ;
+//	scale	-a (0-$scale[0]) (0-$scale[1]) (0-$scale[2]) $combined ;
+	// Move its pivot to 0 0 0
+	move 0 0 0 ($combined+".scalePivot") ;
+	move 0 0 0 ($combined+".rotatePivot") ;
+
+	makeIdentity -a true $combined ;
+
+	// Move it to original position
+	move	-a $position[0] $position[1] $position[2] $combined ;
+//	rotate	-a $rotation[0] $rotation[1] $rotation[2] $combined ;
+//	scale	-a $scale[0] $scale[1] $scale[2] $combined ;
+	// Move its pivot to original position
+	move $pivpos[0] $pivpos[1] $pivpos[2] ($combined+".scalePivot") ;
+	move $pivpos[0] $pivpos[1] $pivpos[2] ($combined+".rotatePivot") ;
+
+	// Move it to the original Heirarchy position...
+	if (size($DAGPos[0]))	// ...if it was in a heirarchy...
+	{
+		parent -a $combined $DAGPos[0] ;
+		reorder -f $combined ;
+	}
+
+	if (`objExists $master`) warning ($endname + " Still exists - Appending index on original Name");
+
+	string $finalName = `rename $combined $endname` ; // rename it with the original name
+
+	if (`objExists $DAGMarker[0]`) delete $DAGMarker[0] ; // Delete the locator we created earlier
+	return $master ;
+}
+
+flattenCombineDontMerge();

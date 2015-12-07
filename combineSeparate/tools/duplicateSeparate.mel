@@ -1,0 +1,101 @@
+// duplicateSeparate.mel
+//	by Naughty (naughty_genepool@hotmail.com) and Ursus
+//
+// This script allows you to detach the selected faces from any selected objects.
+// Detached faces become a new, seperate object but retain their original name,
+// position, pivot, material, vtx colors, etc...
+//
+// Inspired by Brian Ewert and JeffD's detachSeparate but written because none
+// of the other detachSeparate scripts seemed to work quite right with multiple
+// objects selected...?
+//
+// N.B. Does not perform as you would expect with instances. 
+// Best avoided on instanced objects.
+//
+// Usage:
+//
+//	duplicateSeparate;	// removes all selected faces to a new DAG object(s)
+//
+//
+// goto:
+//	http://www.naughtynathan.supanet.com/mel.htm
+// for more detailed explanations, pictures and even more MEL scripts...
+
+proc string stripPath(string $name)
+{
+	string $result[];
+	int $paths = tokenize($name, "|", $result);
+	return $result[($paths-1)];
+}
+
+global proc string[] duplicateSeparate()
+{
+	int $count;
+	string $parent, $dupes[], $newNames[], $stupidArrays[];
+
+	string $selFaces[] = `filterExpand -sm 34 -ex 1 -fp 0`;
+	if (!size($selFaces)) error "No Polygons selected for Detaching.";
+
+	//	MUST hilite all objects who have faces selected (this doesn't take any longer!?)
+	hilite -r;	// un hilite everyting first
+	for ($face in $selFaces)
+	{
+		string $object = `match "^[^\.]*" $face`;
+		if (`nodeType $object` == "mesh")
+		{
+			$stupidArrays = `listRelatives -p -f $object`;
+			$object = $stupidArrays[0];
+		}
+		hilite $object;
+	}
+
+	string $selObjects[] = `ls -hl -l`;
+
+	//	duplicate each hilited object
+	$count = 0;
+	for ($obj in $selObjects)
+	{
+		$stupidArrays = `duplicate $obj`;
+		// all children get duplicated too, so if there were any, delete them.
+		string $children[] = `listRelatives -c -type "transform" -f $stupidArrays[0]`;
+		if (`size($children)`)	delete $children;
+
+		$stupidArrays = `ls -l $stupidArrays[0]`;
+		$dupes[$count] = $stupidArrays[0];
+		$count++;
+	}
+
+	//	delete ALL originally selected faces
+//Ursus
+	//delete $selFaces; 
+//Ursus
+
+	//	rename original objects & rename dupes to the original names
+	$count = 0;
+	for ($obj in $selObjects)
+	{
+		$newNames[$count] = `rename $obj "orig#"`;	// $dupes[$count]
+		rename $dupes[$count] (stripPath($selObjects[$count]));
+		$count++;
+	}
+
+	//	select ALL polys on dupes and DEselect original selection
+	select $selObjects;
+	select -r `getFaces`;
+	select -d $selFaces;
+	delete ;
+
+	//	rename dupes back to dupe names & original objects back to original names
+	$count = 0;
+	for ($obj in $selObjects)
+	{
+		select -add $obj;
+		$dupes[$count] = `rename $obj (stripPath($obj)+"_1")`;
+		rename $newNames[$count] (stripPath($obj));
+		$count++;
+	}
+	changeSelectMode -object;
+	string $result[] = `ls -sl -l`;
+	return $result;
+}
+duplicateSeparate();
