@@ -8,6 +8,7 @@ Future plans:
  -Lets users to combine selected objects, assign a skin cluster and adjust the weights and finally to separate back to original objects saving the skinning.
  
  
+ 
 Using:
 
 Unzip the project to your Maya Python path folder
@@ -19,6 +20,8 @@ instance = cmbSep()
 instance.doCombine() #to combine objects
 
 instance.doSeparate() #to separate back to original objects
+ 
+ 
  
  
  Vendor: Roman Volodin
