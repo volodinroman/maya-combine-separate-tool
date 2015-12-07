@@ -11,8 +11,8 @@ Future plans:
  Using:
  Unzip the project to your Maya Python path folder
  
- import combineSeparate.combineSeparate as cmbSep
- instance = cmbSep()
+ \nimport combineSeparate.combineSeparate as cmbSep
+ \ninstance = cmbSep()
  
  #select some objects
  
