@@ -1,6 +1,6 @@
 # maya_combineSeparate
 
-A python module for Autodesk Maya that shows a way to collect objects data before combining them and allowing separate a new combined object back to original ones
+A python module for Autodesk Maya that shows a way to collect objects data before combining them and separating a new combined object back to original ones
 
 It uses standart python libraries, maya.cmds, maya.mel and maya.OpenMaya
 
