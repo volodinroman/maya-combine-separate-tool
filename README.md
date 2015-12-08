@@ -25,12 +25,3 @@ instance.doCombine() #to combine objects
 instance.doSeparate() #to separate back to original objects
  
  
- 
- 
- Vendor: Roman Volodin
- 
- website: http://romanvolodin.com
- 
- email: contact@romanvolodin.com
- 
- 2015
