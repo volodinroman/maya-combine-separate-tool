@@ -20,22 +20,23 @@ It uses standart python libraries, maya.cmds, maya.mel, maya.OpenMaya and maya.O
 Unzip the project to your Maya Python path folder
 
 Import the script
+```
 ######import combineSeparate.main as combSep
-
+```
 Select objects You want to combine. They will be combined to the first selected object
 
 Create an instance of objectCombine class and run combine
-
+```
 ######instance = combSep.objectCombine()  *#collects all data needed for combining and separating*
 ######instance.doCombine() *#run combine*
-
+```
 
 Create joint system and assign skin deformer to the combined mesh where these joints are influence objects
 
 Back to original meshes
-
+```
 ######instance.doCollectSkinData_deleteSkin() *#gather all data needed for restoring skinning from the combined object*
 ######instance.doSeparate() *#separate object into parts*
 ######instance.doRecreateSkinning() *#recreate skinning for separated objects*
-
+```
 
