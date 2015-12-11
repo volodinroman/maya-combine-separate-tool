@@ -1,27 +1,35 @@
 # maya_combineSeparate
 
-A python module for Autodesk Maya that shows a way to collect objects data before combining them and separating a new combined object back to original ones
+A python module for Autodesk Maya that shows a way to separate a combined object back to original ones (contained 2 or more shells) preserving skinning that was applied to the combined object.
 
-It uses standart python libraries, maya.cmds, maya.mel and maya.OpenMaya
+It uses standart python libraries, maya.cmds, maya.mel, maya.OpenMaya and maya.OpenMayaAnim
 
-Future plans:
+How it works:
 
-Let users combine selected objects, assign a skin cluster and adjust the weights and finally separate back to original objects saving the skinning.
+First step is to select objects that need to be combined and create an instance of objectCombine class that gathers all data from the original objects.
+
+Next step is combining method that runs a mel script with a custom combine function.
  
+After combining a user need to create a joint system and assign a skin deformer to the combined object using these joints. 
+
+Last step is to run methods that collect data from skinCluster assigned to the combined object, separate this object back to original meshes and recreates all the skinning weights in a newly created skinClusters for each separated mesh.
  
  
 Using:
 
 Unzip the project to your Maya Python path folder
 
-Select some objects composed of several shells
- 
-import combineSeparate.main as cmbSep
+# 1) select objects You want to combine. They will be combined to the first selected object
 
-instance = cmbSep.objectCombine()
- 
-instance.doCombine() #to combine objects
+# 2) 
+instance = combSep.objectCombine()  #collects all data needed for combining and separating 
+instance.doCombine() #run combine
 
-instance.doSeparate() #to separate back to original objects
- 
- 
+# 3) Create joint system and assign skin deformer to the combined mesh where these joints are influence objects
+
+# 4) Back to original meshes
+instance.doCollectSkinData_deleteSkin() #gather all data needed for restoring skinning from the combined object
+instance.doSeparate() #separate object into parts
+instance.doRecreateSkinning() #recreate skinning for separated objects
+
+
