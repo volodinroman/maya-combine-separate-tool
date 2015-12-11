@@ -19,6 +19,9 @@ It uses standart python libraries, maya.cmds, maya.mel, maya.OpenMaya and maya.O
 
 Unzip the project to your Maya Python path folder
 
+Import the script
+######import combineSeparate.main as combSep
+
 Select objects You want to combine. They will be combined to the first selected object
 
 Create an instance of objectCombine class and run combine
