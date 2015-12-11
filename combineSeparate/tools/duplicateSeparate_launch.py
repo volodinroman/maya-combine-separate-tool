@@ -11,5 +11,7 @@ def runDuplicateSeparate():
     cmds.undoInfo(ock=1)
     scriptFile = open(dir+"/duplicateSeparate.mel", 'r')
     scriptIn =  scriptFile.read()
-    mel.eval(scriptIn)
+    result = mel.eval(scriptIn)
     cmds.undoInfo(cck=1)
+
+    return result
