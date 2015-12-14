@@ -320,8 +320,7 @@ class objectCombine():
         self.jointList = fnSkinCluster.getSkinClusterJoints(combineSkinClusterName) #returns list of joints  
         combinedIntermediateMesh = fnSkinCluster.getShape(self.tmp_combinedObject, True)
 
-        """get MPoint data from the combined object to store vertex positions according ther indices"""
-
+        """get MPoint data from the combined object to store vertex positions according ther indices+"""
         selectionList = OpenMaya.MSelectionList()
         selectionList.clear()
         selectionList.add(self.tmp_combinedObject)
@@ -344,52 +343,56 @@ class objectCombine():
         combined_DagPath, combined_components = fnSkinCluster.getGeometryComponents(combined_fnSkinCluster) #get dagPath, components of the combined object for gathering skinClusterWeights
         combined_Weights_unsorted = fnSkinCluster.getWeights(combined_fnSkinCluster, combined_DagPath, combined_components) #get weights (see fnSkinCluster Doc)
 
-        #get real list ofinfluences in the right order
+        #get real list of influences in the order Maya see it 
         self.influenceList = fnSkinCluster.getSkinClusterInfluences(combined_fnSkinCluster)
 
         #sort jointWeights list as sublists of influences (self.influenceList) per vertex to get the same format as in ComponentEditor
         self.combinedWeights = [combined_Weights_unsorted[i:i+len(self.influenceList)] for i in range(0, len(combined_Weights_unsorted), len(self.influenceList))]
+        
 
-    
         """after collecting skinCluster data - delete skincluster and skinclusterSet"""
         cmds.delete(combineSkinClusterName)
-
 
         """delete intermediate shapeOrig nodes"""
         cmds.delete(self.tmp_combinedObject, ch=1)
 
-        
+    
         
     def doSeparate(self):
 
-        """get shells of the combined mesh"""
-        self.tmp_shells = self.getShells(self.tmp_combinedObject)
+        """get shells of the combined mesh+"""
+        self.tmp_shells = self.getShells(self.tmp_combinedObject)  #[ [f1, f2, f3]  [f4, f5, f6]  [f7, f8, f9] ]
 
         """Get bounding boxes for these shells"""
         for shell in self.tmp_shells: # for i in current object shells
             self.tmp_bboxes.append(objectCombine.getComponentBBox(shell)) # append MBoundingBox
 
         """initialize visited units"""
-        self.tmp_visited = [0] * len(self.tmp_bboxes)
+        self.tmp_visited = [0] * len(self.tmp_bboxes) # initial state = [0,0,0] that means they are not visited yet
 
         """initialize ids list"""
         self.tmp_sorted = [0] * len(self.tmp_bboxes) #indices of shells and bboxes according their objects L
 
+
         """Get combined object data"""
         for idx_i, i in enumerate(self.orig_bboxes): #for each orig object (bbox)
             for idx_j, j in enumerate(i): #for each bbox of orig object
-                
+
                 for idx_k, k in enumerate(self.tmp_bboxes): #combined bboxes
+
                     if not self.checkVisited(self.tmp_visited, idx_k): #if not visited
-                        bbox = self.orig_bboxes[idx_i][idx_j] #orig bbox
+        
+                        bbox = self.orig_bboxes[idx_i][idx_j] #orig bbox of object[idx_i]'s shell[idx_j]
+
                         #compare bboxes
-                        if round(bbox.min().z, 5) == round(k.min().z, 5) and round(bbox.max().z, 5) == round(k.max().z, 5) and round(bbox.min().x, 5) == round(k.min().x, 5) and round(bbox.min().y, 5) == round(k.min().y, 5):
+                        roundTolerance = 4 #affects how clean are going to be result of the comparison below
+                        if round(bbox.min().z, roundTolerance) == round(k.min().z, roundTolerance) and round(bbox.max().z, roundTolerance) == round(k.max().z, roundTolerance) and round(bbox.min().x, roundTolerance) == round(k.min().x, roundTolerance) and round(bbox.min().y, roundTolerance) == round(k.min().y, roundTolerance):
                             self.setVisited(self.tmp_visited, idx_k) # visited is 1  -do no check it in the future iterations
                             self.tmp_sorted[idx_k] = idx_i #combined bbox at idx_k set id index as idx_i (original list object index)
                             continue #stop iteration
 
-   
-        """separate   """                 
+
+        """separate   """            
         for i in range(len(self.orig_shells)): # for i in 0...num objects L
             id = i  #id = current i
             faceList_toSeparate = []
@@ -427,9 +430,14 @@ class objectCombine():
             separatedMesheShape = cmds.listRelatives(self.separatedMeshes[i], c=1, f=1, type="mesh")[0]
             sCluster = cmds.skinCluster(self.influenceList, separatedMesheShape, nw=2, prune = 1)[0] #tsb = to selected bones, nw = normalizeWeights interactive
             self.separatedSkinClusters.append(sCluster)
+            #get influences and remove those that are not in the influence list
+            totalInfluences = fnSkinCluster.getSkinClusterJoints(sCluster)
+            for j in totalInfluences:
+                if j not in self.influenceList: #not in original list
+                    cmds.skinCluster(separatedMesheShape, e=1, ri=j)
 
 
-        """2 get separated objects vertices MPoint positions"""
+        """2 get separated objects vertices MPoint positions""" #works correct
         for i in self.separatedMeshes: #for each object in list
             objectVertPos = []
 
@@ -448,6 +456,8 @@ class objectCombine():
                 objectVertPos.append(point) 
                 iter.next()
 
+
+
             self.separatedMPointList.append(objectVertPos) #add object's mpoint list to global list [[...],[...],[...],[...],[...]]
 
         """ @recreating weights
@@ -460,47 +470,62 @@ class objectCombine():
         combined_mpoint_visited = [0] * len(self.combinedMPointList)
 
         for idx, cluster in enumerate(self.separatedSkinClusters): #for each cluster
-            
+
             #create MFnSkinCluster
             fnSC = fnSkinCluster.createMFnSkinCluster(cluster)
             
-            #get object DagPath, all components 
+            #get object DagPath of an object the cluster influences, all components 
             dagPath, components = fnSkinCluster.getGeometryComponents(fnSC)
 
             #influence indices
-            influencePaths = OpenMaya.MDagPathArray()
+            influencePaths = OpenMaya.MDagPathArray() #dag paths of influences - their order is different from the combined object influence order
             numInfluences = fnSC.influenceObjects(influencePaths)
             influenceIndices = OpenMaya.MIntArray(numInfluences)
-            for i in range(numInfluences):
-                influenceIndices.set(i, i)
+            # for i in range(numInfluences): #here we for indices which are used to apply weights
+            #     influenceIndices.set(i, i)
+
+
+            for i in range(numInfluences): #here we for indices which are used to apply weights
+                curInfluenceName = influencePaths[i].fullPathName()
+                combIdx = self.influenceList.index(curInfluenceName)
+
+                influenceIndices.set(combIdx, i)
+     
 
 
             #list of weights for all vertices for the current object
-            weights = fnSkinCluster.getWeights(fnSC, dagPath, components) #get unsorted but ordered list of weights
+            weights = fnSkinCluster.getWeights(fnSC, dagPath, components) #get weight list ordered according list of influence 
             idx_W = 0
+
+
             for idx_point, mpoint in enumerate(self.separatedMPointList[idx]): #for each mpoint in separated object
 
                 for idx_cPoint, cpoint in enumerate(self.combinedMPointList): #for all mpoints in combined object
 
                     if combined_mpoint_visited[idx_cPoint] == 0: #check visited to prevent extra computations
-                        if mpoint.x == cpoint.x and mpoint.y == cpoint.y and mpoint.z == cpoint.z:
+                        if mpoint.x == cpoint.x and mpoint.y == cpoint.y and mpoint.z == cpoint.z: #the same coords
 
-                            #set visited
-                            combined_mpoint_visited[idx_cPoint] = 1
+                            
 
                             #coordinates match
-                            combined_vtx_weightList = self.combinedWeights[idx_cPoint] #for each self.influenceList
+
+                            combined_vtx_weightList = self.combinedWeights[idx_cPoint] #get weights from the combineWeights for each influence [double, double, double.... N] N - num of inf
+
 
                             #update weight list
                             for i in combined_vtx_weightList:
                                 weights.set(i, idx_W)
                                 idx_W += 1
 
+                            #set visited
+                            combined_mpoint_visited[idx_cPoint] = 1
+
                             continue
 
 
 
             #set the weight for the current object
+
             fnSC.setWeights(dagPath, components, influenceIndices, weights, True) #normalize = True
 
 
