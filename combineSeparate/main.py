@@ -20,6 +20,7 @@ separate back to original parts
 preserve skinning
 """
 
+
 class fnSkinCluster():
     def __init__(self):
         print "skinProcessor initialized"
@@ -153,6 +154,8 @@ class fnSkinCluster():
         return weights
 
 
+
+
 class objectCombine():
     def __init__(self):
 
@@ -203,6 +206,8 @@ class objectCombine():
         self.separatedMPointList = [] #[ [MPoint MPoint MPoint ...] [MPoint MPoint MPoint ...] [...] ]
         
         self.combinedWeights = [] #[ w1, w2, w3, w4...] Float
+
+
 
     def comprehensionList(self, A,B):
         """
@@ -316,6 +321,7 @@ class objectCombine():
 
         combinedObjectShape = fnSkinCluster.getShape(cmds.listRelatives(self.tmp_combinedObject, c=1, f=1)[0])
         combineSkinClusterName = fnSkinCluster.getSkinCluster(combinedObjectShape)
+
         combinedSkinClusterSet = fnSkinCluster.getSkinClusterSet(combineSkinClusterName)
         self.jointList = fnSkinCluster.getSkinClusterJoints(combineSkinClusterName) #returns list of joints  
         combinedIntermediateMesh = fnSkinCluster.getShape(self.tmp_combinedObject, True)
@@ -392,7 +398,8 @@ class objectCombine():
                             continue #stop iteration
 
 
-        """separate   """            
+        """separate   """ 
+        renameToOriginal = None           
         for i in range(len(self.orig_shells)): # for i in 0...num objects L
             id = i  #id = current i
             faceList_toSeparate = []
@@ -405,11 +412,24 @@ class objectCombine():
                 name = self.orig_names[i].split("|")[-1]
                 fullname = object[0][:-1 * len(object[0].split("|")[-1])] + name 
                 fullname = cmds.rename(object[0], name)
+
+
+                if name == self.tmp_combinedObject.split("|")[-1]:
+                    renameToOriginal = fullname
+                    self.separatedMeshes.append(self.tmp_combinedObject) #save object's full name
+                    continue
+
                 self.separatedMeshes.append(fullname) #save object's full name
+
+
+        
 
         cmds.delete(self.tmp_combinedObject)
 
-        """rename object that has the same as combineObject name but was renamed as name1         --------------TO DO"""
+        if renameToOriginal:       
+            cmds.rename(renameToOriginal, self.tmp_combinedObject.split("|")[-1])
+
+
 
     def doRecreateSkinning(self):
 
@@ -481,18 +501,18 @@ class objectCombine():
             influencePaths = OpenMaya.MDagPathArray() #dag paths of influences - their order is different from the combined object influence order
             numInfluences = fnSC.influenceObjects(influencePaths)
             influenceIndices = OpenMaya.MIntArray(numInfluences)
-            # for i in range(numInfluences): #here we for indices which are used to apply weights
-            #     influenceIndices.set(i, i)
 
 
-            for i in range(numInfluences): #here we for indices which are used to apply weights
-                curInfluenceName = influencePaths[i].fullPathName()
-                combIdx = self.influenceList.index(curInfluenceName)
+            # get array of names
+            influencePaths_str = []
+            for i in range(influencePaths.length()):
+                influencePaths_str.append(influencePaths[i].fullPathName())
 
-                influenceIndices.set(combIdx, i)
+            for idx_infl, infl in enumerate(self.influenceList):
+                infIdx = influencePaths_str.index(infl)
+                influenceIndices.set(infIdx, idx_infl)
+
      
-
-
             #list of weights for all vertices for the current object
             weights = fnSkinCluster.getWeights(fnSC, dagPath, components) #get weight list ordered according list of influence 
             idx_W = 0
@@ -509,9 +529,9 @@ class objectCombine():
 
                             #coordinates match
 
-                            combined_vtx_weightList = self.combinedWeights[idx_cPoint] #get weights from the combineWeights for each influence [double, double, double.... N] N - num of inf
+                            combined_vtx_weightList = self.combinedWeights[idx_cPoint] #get weights for vtx from the combineWeights for each influence [double, double, double.... N] N - num of inf
 
-
+                            # print "separated weights for separated infl: ", combined_vtx_weightList
                             #update weight list
                             for i in combined_vtx_weightList:
                                 weights.set(i, idx_W)
@@ -525,7 +545,7 @@ class objectCombine():
 
 
             #set the weight for the current object
-
+            # print influenceIndices[0], influenceIndices[1], influenceIndices[2], influenceIndices[3], influenceIndices[4]
             fnSC.setWeights(dagPath, components, influenceIndices, weights, True) #normalize = True
 
 
