@@ -15,7 +15,7 @@ It uses standart python libraries, maya.cmds, maya.mel, maya.OpenMaya and maya.O
 - Last step is to run methods that collect data from skinCluster assigned to the combined object, separate this object back to original meshes and recreates all the skinning weights in a newly created skinClusters for each separated mesh.
  
  
-####Using:
+####Usage:
 
 Unzip the project to your Maya Python path folder
 
