@@ -4,7 +4,7 @@ A python module for Autodesk Maya that shows a way to separate a combined object
 
 It uses standart python libraries, maya.cmds, maya.mel, maya.OpenMaya and maya.OpenMayaAnim
 
-####How it works:
+## How it works:
 
 - First step is to select objects that need to be combined and create an instance of objectCombine class that gathers all data from the original objects.
 
@@ -15,7 +15,7 @@ It uses standart python libraries, maya.cmds, maya.mel, maya.OpenMaya and maya.O
 - Last step is to run methods that collect data from skinCluster assigned to the combined object, separate this object back to original meshes and recreates all the skinning weights in a newly created skinClusters for each separated mesh.
  
  
-####Usage:
+## Usage:
 
 Unzip the project to your Maya Python path folder
 
