@@ -1,42 +1,42 @@
 # maya_combineSeparate
 
-A python module for Autodesk Maya that shows a way to separate a combined object back to original ones (contained 2 or more shells) preserving skinning that was applied to the combined object.
+A Python module for Autodesk Maya that provides a method to separate a combined object back into its original components (containing two or more shells) while preserving skinning applied to the combined object.
 
-It uses standart python libraries, maya.cmds, maya.mel, maya.OpenMaya and maya.OpenMayaAnim
+It utilizes standard Python libraries along with `maya.cmds`, `maya.mel`, `maya.OpenMaya`, and `maya.OpenMayaAnim`.
 
-## How it works:
+## How It Works
 
-- First step is to select objects that need to be combined and create an instance of objectCombine class that gathers all data from the original objects.
+1. **Select Objects** – Choose the objects that need to be combined and create an instance of the `objectCombine` class, which gathers all necessary data from the original objects.
 
-- Next step is combining method that runs a mel script with a custom combine function.
- 
-- After combining a user need to create a joint system and assign a skin deformer to the combined object using these joints. 
+2. **Combine Objects** – The module runs a MEL script with a custom combine function to merge the selected objects.
 
-- Last step is to run methods that collect data from skinCluster assigned to the combined object, separate this object back to original meshes and recreates all the skinning weights in a newly created skinClusters for each separated mesh.
- 
- 
-## Usage:
+3. **Apply Skinning** – After combining, create a joint system and assign a skin deformer to the combined object using these joints.
 
-Unzip the project to your Maya Python path folder
+4. **Separate & Restore Skinning** – Execute methods to collect skinCluster data from the combined object, separate it back into the original meshes, and restore skinning weights by creating new skinClusters for each separated mesh.
 
-Import the script
-```
-import combineSeparate.main as combSep
-```
-Select objects You want to combine. They will be combined to the first selected object
+## Usage
 
-Create an instance of objectCombine class and run combine
-```
-instance = combSep.objectCombine()  #collects all data needed for combining and separating
-instance.doCombine() #run combine
-```
+1. Unzip the project into your Maya Python path folder.
 
-Create joint system and assign skin deformer to the combined mesh where these joints are influence objects
+2. Import the script:
+   ```python
+   import combineSeparate.main as combSep
+   ```
 
-Back to original meshes
-```
-instance.doCollectSkinData_deleteSkin() #gather all data needed for restoring skinning from the combined object
-instance.doSeparate() #separate object into parts
-instance.doRecreateSkinning() #recreate skinning for separated objects
-```
+3. Select the objects you want to combine. The first selected object will act as the base.
+
+4. Create an instance of the `objectCombine` class and run the combine operation:
+   ```python
+   instance = combSep.objectCombine()  # Collects necessary data for combining and separating
+   instance.doCombine()  # Executes the combine function
+   ```
+
+5. Create a joint system and assign a skin deformer to the combined mesh, ensuring the joints are set as influence objects.
+
+6. Restore original meshes and skinning:
+   ```python
+   instance.doCollectSkinData_deleteSkin()  # Collects skinning data from the combined object
+   instance.doSeparate()  # Separates the object into its original parts
+   instance.doRecreateSkinning()  # Recreates skinning for the separated objects
+   ```
 
