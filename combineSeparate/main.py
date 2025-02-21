@@ -1,11 +1,3 @@
-"""
-combineSeparate.py 2015
-Vendor: Roman Volodin
-website: http://romanvolodin.com
-e-mail: contact@romanvolodin.com
-
-"""
-
 import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
 import maya.OpenMayaAnim as OpenMayaAnim
